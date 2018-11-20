@@ -19,5 +19,12 @@
     "type":             "double",
     "decimalPlaces":    2,
     "units":            "C"
+},
+{
+    "name":             "boardTemperature",
+    "shortDescription": "Board Temperature",
+    "type":             "double",
+    "decimalPlaces":    2,
+    "units":            "C"
 }
 ]

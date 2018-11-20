@@ -205,14 +205,17 @@ public:
     Q_PROPERTY(Fact* temperature1       READ temperature1       CONSTANT)
     Q_PROPERTY(Fact* temperature2       READ temperature2       CONSTANT)
     Q_PROPERTY(Fact* temperature3       READ temperature3       CONSTANT)
+    Q_PROPERTY(Fact* boardTemperature   READ boardTemperature   CONSTANT)
 
     Fact* temperature1 (void) { return &_temperature1Fact; }
     Fact* temperature2 (void) { return &_temperature2Fact; }
     Fact* temperature3 (void) { return &_temperature3Fact; }
+    Fact* boardTemperature (void) { return &_boardTemperatureFact; }
 
     static const char* _temperature1FactName;
     static const char* _temperature2FactName;
     static const char* _temperature3FactName;
+    static const char* _boardTemperatureFactName;
 
     static const char* _settingsGroup;
 
@@ -222,6 +225,7 @@ private:
     Fact            _temperature1Fact;
     Fact            _temperature2Fact;
     Fact            _temperature3Fact;
+    Fact            _boardTemperatureFact;
 };
 
 class VehicleClockFactGroup : public FactGroup
@@ -915,6 +919,7 @@ private:
     void _handleScaledPressure(mavlink_message_t& message);
     void _handleScaledPressure2(mavlink_message_t& message);
     void _handleScaledPressure3(mavlink_message_t& message);
+    void _handleBoardTemperature(mavlink_message_t& message);
     // ArduPilot dialect messages
 #if !defined(NO_ARDUPILOT_DIALECT)
     void _handleCameraFeedback(const mavlink_message_t& message);

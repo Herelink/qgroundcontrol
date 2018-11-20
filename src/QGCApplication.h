@@ -42,6 +42,7 @@
 class QGCSingleton;
 class MainWindow;
 class QGCToolbox;
+class AndroidController;
 
 /**
  * @brief The main application and management class.
@@ -52,7 +53,7 @@ class QGCToolbox;
  **/
 class QGCApplication : public
 #ifdef __mobile__
-    QGuiApplication // Native Qml based application
+    QApplication // Native Qml based application
 #else
     QApplication    // QtWidget based application
 #endif
@@ -172,6 +173,7 @@ private:
 #endif
 
     QGCToolbox* _toolbox;
+    AndroidController* _androidController;
 
     bool _bluetoothAvailable;
 

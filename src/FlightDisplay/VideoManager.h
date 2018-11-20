@@ -18,6 +18,7 @@
 #include "QGCLoggingCategory.h"
 #include "VideoReceiver.h"
 #include "QGCToolbox.h"
+#include "VideoStreamControl.h"
 
 Q_DECLARE_LOGGING_CATEGORY(VideoManagerLog)
 
@@ -37,6 +38,7 @@ public:
     Q_PROPERTY(bool             uvcEnabled          READ    uvcEnabled                                  CONSTANT)
     Q_PROPERTY(bool             fullScreen          READ    fullScreen      WRITE   setfullScreen       NOTIFY fullScreenChanged)
     Q_PROPERTY(VideoReceiver*   videoReceiver       READ    videoReceiver                               CONSTANT)
+    Q_PROPERTY(VideoStreamControl* videoStreamControl READ  videoStreamControl                          CONSTANT)
 
     bool        hasVideo            ();
     bool        isGStreamer         ();
@@ -44,6 +46,7 @@ public:
     QString     videoSourceID       () { return _videoSourceID; }
 
     VideoReceiver*  videoReceiver   () { return _videoReceiver; }
+    VideoStreamControl* videoStreamControl () { return _videoStreamControl; }
 
 #if defined(QGC_DISABLE_UVC)
     bool        uvcEnabled          () { return false; }
@@ -69,6 +72,7 @@ private slots:
     void _videoSourceChanged        ();
     void _udpPortChanged            ();
     void _rtspUrlChanged            ();
+    void _videoStreamUrlChanged     ();
     void _tcpUrlChanged             ();
 
 private:
@@ -78,6 +82,7 @@ private:
     VideoReceiver*  _videoReceiver;
     VideoSettings*  _videoSettings;
     QString         _videoSourceID;
+    VideoStreamControl* _videoStreamControl;
     bool            _fullScreen;
 };
 

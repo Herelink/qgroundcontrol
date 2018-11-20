@@ -11,6 +11,9 @@ import QtQuick              2.3
 import QtQuick.Layouts      1.2
 import QtQuick.Controls     1.2
 
+import QtQuick.Dialogs 1.1
+
+
 import QGroundControl                       1.0
 import QGroundControl.Controls              1.0
 import QGroundControl.Palette               1.0
@@ -26,6 +29,10 @@ Rectangle {
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
     property var  _activeVehicle:  QGroundControl.multiVehicleManager.activeVehicle
+
+    property var    _videoReceiver:     QGroundControl.videoManager.videoReceiver
+
+    property real __timerSec: 10
 
     signal showSettingsView
     signal showSetupView
@@ -199,11 +206,40 @@ Rectangle {
         }
 
         MainToolBarIndicators {
+            id:                 testmainToolBarIndicators
             anchors.margins:    ScreenTools.defaultFontPixelHeight * 0.66
             anchors.top:        parent.top
             anchors.bottom:     parent.bottom
             Layout.fillWidth:   true
         }
+        //rate
+        QGCLabel {
+            id:                     showRatelabel
+            anchors.left:           testmainToolBarIndicators.right
+            anchors.top:            testmainToolBarIndicators.top
+            anchors.bottom:         testmainToolBarIndicators.bottom
+            text:                   qsTr("Rate:")
+            font.pointSize:         ScreenTools.mediumFontPointSize
+            font.family:            ScreenTools.demiboldFontFamily
+            color:                  qgcPal.colorRed
+        }
+        QGCLabel {
+            id:                     d2dInforRateDataLable
+            anchors.left:           showRatelabel.right
+            anchors.top:            showRatelabel.top
+            anchors.bottom:         showRatelabel.bottom
+            text:                   qsTr("0kbps")
+            font.pointSize:         ScreenTools.mediumFontPointSize
+            font.family:            ScreenTools.demiboldFontFamily
+            color:                  qgcPal.colorRed
+        }
+        Connections {
+            target:  pD2dInforData
+            onSignalUpRate: {
+               d2dInforRateDataLable.text= pD2dInforData.getUlRateValue() + "kbps";
+            }
+        }
+        //end
     }
 
     // Progress bar
@@ -213,5 +249,159 @@ Rectangle {
         height:         toolBar.height * 0.05
         width:          _activeVehicle ? _activeVehicle.parameterManager.loadProgress * parent.width : 0
         color:          qgcPal.colorGreen
+    }
+
+    MessageDialog {
+        id: messageDialog
+        icon: StandardIcon.Warning
+        title: "WARNING"
+        text: "Please calibrate first."
+        standardButtons:    StandardButton.Yes
+        onYes: {
+            messageDialog.close();
+            //set flag
+            pD2dInforData.setIsCalibrateFlag(true);
+            pD2dInforData.sendCalibrationCmd(3);
+            pD2dInforData.setWhichCalibrateFromFlag(true);
+
+            //open dialog and start timer
+            showMessageDialog.open();
+            showMessageDialogTimer.start();
+        }
+        Component.onCompleted: visible = false
+    }
+
+    MessageDialog {
+        id: showMessageDialog
+        icon: StandardIcon.Warning
+        title: "WARNING"
+        text: "Please long press the airplane calibrate button for 3 seconds within 30 seconds,and wait for a moment .\n"
+        standardButtons:    StandardButton.NoButton
+        Component.onCompleted: visible = false
+    }
+
+    MessageDialog {
+        id: resultDialog
+        icon: StandardIcon.Warning
+        title: "WARNING"
+        text: "calibrate succeed."
+        standardButtons:    StandardButton.Ok
+        onAccepted: {
+            close();
+        }
+        Component.onCompleted: visible = false
+    }
+
+
+    Timer {
+        id: showMessageDialogTimer
+        interval: 3000
+        repeat: true
+        triggeredOnStart: true
+        running: false
+        onTriggered: {
+            __timerSec--;
+            if(__timerSec < 0)
+            {
+                showMessageDialog.close();
+                svrMessageDialog.close();
+                __timerSec = 10;
+                showMessageDialogTimer.stop();
+                resultDialog.text = "calibrate failed.";
+                resultDialog.open();
+            }
+        }
+    }
+
+    Connections {
+        target:  pD2dInforData
+        onMaintoolbarCalibrateFalied: {
+            pD2dInforData.setIsCalibrateFlag(false);
+
+            showMessageDialogTimer.stop();
+            showMessageDialog.close();
+            svrMessageDialog.close();
+
+            resultDialog.text = "calibrate failed.";
+            resultDialog.open();
+        }
+    }
+
+    Connections {
+        target:  pD2dInforData
+        onMaintoolbarCalibrateSucceed: {
+            pD2dInforData.setIsCalibrateFlag(false);
+
+            showMessageDialogTimer.stop();
+            showMessageDialog.close();
+            svrMessageDialog.close();
+
+            resultDialog.text = "calibrate succeed.";
+            resultDialog.open();
+        }
+    }
+
+
+    Timer {
+        id: messageDialogTimer
+        interval: 15000
+        repeat: true
+        triggeredOnStart: true
+        running: true
+        onTriggered: {
+            if(pD2dInforData.getIsCalibrateFlag())
+                return;
+            pD2dInforData.sendCalibrationCmd(5);
+        }
+    }
+    Connections {
+        target:  pD2dInforData
+        onCalibrateChecked: {
+           messageDialogTimer.stop();
+        }
+    }
+
+    Connections {
+        target:  pD2dInforData
+        onCalibrateNoChecked: {
+            if(pD2dInforData.getIsCalibrateFlag())
+                return;
+            resultDialog.close();
+            svrMessageDialog.close();
+            messageDialog.open();
+        }
+    }
+
+    //svr
+    MessageDialog {
+        id: svrMessageDialog
+        icon: StandardIcon.Warning
+        title: "WARNING"
+        text: "Connection failed, please check the version match."
+        standardButtons:    StandardButton.Ok
+        onAccepted: {
+            close()
+        }
+        Component.onCompleted: visible = false
+    }
+
+    Connections {
+        target:  pD2dInforData
+        onSrvStateSingle: {
+            if(index == 3)
+            {
+                resultDialog.close();
+                messageDialog.close();
+                svrMessageDialog.text = "Connection failed, please check the version match.";
+                svrMessageDialog.open();
+            }
+            else if(index == 6)
+            {
+                resultDialog.close();
+                messageDialog.close();
+                svrMessageDialog.text = "Serial number unmatched,Please calibrate first!";
+                svrMessageDialog.open();
+            }
+        }
     }
 }

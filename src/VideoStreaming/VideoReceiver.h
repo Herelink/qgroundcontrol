@@ -134,6 +134,7 @@ private:
     QTimer          _timer;
     QTcpSocket*     _socket;
     bool            _serverPresent;
+    time_t          _startTime;
 
 #endif
 

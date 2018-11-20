@@ -20,7 +20,7 @@
 #if defined(QGC_GST_STREAMING)
 #include <gst/gst.h>
 #ifdef __android__
-//#define ANDDROID_GST_DEBUG
+#define ANDDROID_GST_DEBUG
 #endif
 #endif
 
@@ -44,6 +44,7 @@
     GST_PLUGIN_STATIC_DECLARE(rtpmanager);
     GST_PLUGIN_STATIC_DECLARE(isomp4);
     GST_PLUGIN_STATIC_DECLARE(matroska);
+    GST_PLUGIN_STATIC_DECLARE(androidmedia);
 #endif
     G_END_DECLS
 #endif
@@ -71,7 +72,7 @@ static const char *tag = "myapp";
 static void *thread_func(void*)
 {
     ssize_t rdsz;
-    char buf[128];
+    char buf[1024];
     while((rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
         if(buf[rdsz - 1] == '\n') --rdsz;
         buf[rdsz] = 0;  /* add null-terminator */
@@ -120,15 +121,19 @@ void initializeVideoStreaming(int &argc, char* argv[], char* logpath, char* debu
         qgcputenv("GST_PLUGIN_PATH", currentDir, "/gstreamer-plugins");
     #endif
 
-
         // Initialize GStreamer
         if (logpath) {
             if (debuglevel) {
                 qputenv("GST_DEBUG", debuglevel);
+#ifdef ANDDROID_GST_DEBUG
+                if(QString("*:0").compare(debuglevel)) {
+                    start_logger("QGC");
+                }
+#endif
             }
             qputenv("GST_DEBUG_NO_COLOR", "1");
-            qputenv("GST_DEBUG_FILE", QString("%1/%2").arg(logpath).arg("gstreamer-log.txt").toUtf8());
-            qputenv("GST_DEBUG_DUMP_DOT_DIR", logpath);
+//            qputenv("GST_DEBUG_FILE", QString("%1/%2").arg(logpath).arg("gstreamer-log.txt").toUtf8());
+//            qputenv("GST_DEBUG_DUMP_DOT_DIR", logpath);
         }
 
 
@@ -151,6 +156,7 @@ void initializeVideoStreaming(int &argc, char* argv[], char* logpath, char* debu
         GST_PLUGIN_STATIC_REGISTER(rtpmanager);
         GST_PLUGIN_STATIC_REGISTER(isomp4);
         GST_PLUGIN_STATIC_REGISTER(matroska);
+        GST_PLUGIN_STATIC_REGISTER(androidmedia);
     #endif
 #else
     Q_UNUSED(argc);

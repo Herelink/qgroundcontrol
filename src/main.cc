@@ -26,6 +26,7 @@
 #include <QStringListModel>
 #include "QGCApplication.h"
 #include "AppMessages.h"
+#include <gmodule.h>
 
 #ifndef __mobile__
     #include "QGCSerialPortInfo.h"
@@ -82,11 +83,23 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     Q_UNUSED(reserved);
 
     JNIEnv* env;
+    GModule *module;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
 
     QSerialPort::setNativeMethods();
+
+    /* Tell the androidmedia plugin about the Java VM if we can */
+    module = g_module_open (NULL, G_MODULE_BIND_LOCAL);
+    if (module) {
+        void (*set_java_vm) (JavaVM *) = NULL;
+        if (g_module_symbol (module, "gst_amc_jni_set_java_vm",
+                            (gpointer *) & set_java_vm) && set_java_vm) {
+            set_java_vm (vm);
+        }
+        g_module_close (module);
+    }
 
     return JNI_VERSION_1_6;
 }

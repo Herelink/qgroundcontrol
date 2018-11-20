@@ -32,12 +32,15 @@ const char* VideoSettings::enableStorageLimitName = "EnableStorageLimit";
 const char* VideoSettings::rtspTimeoutName =        "RtspTimeout";
 const char* VideoSettings::streamEnabledName =      "StreamEnabled";
 const char* VideoSettings::disableWhenDisarmedName ="DisableWhenDisarmed";
+const char* VideoSettings::videoResolutionName =    "VideoResolution";
+const char* VideoSettings::cameraIdName =           "cameraId";
 
 const char* VideoSettings::videoSourceNoVideo =     "No Video Available";
 const char* VideoSettings::videoDisabled =          "Video Stream Disabled";
 const char* VideoSettings::videoSourceUDP =         "UDP Video Stream";
 const char* VideoSettings::videoSourceRTSP =        "RTSP Video Stream";
 const char* VideoSettings::videoSourceTCP =         "TCP-MPEG2 Video Stream";
+const char* VideoSettings::videoSourceAuto =        "Auto Connection Video Stream";
 
 VideoSettings::VideoSettings(QObject* parent)
     : SettingsGroup(videoSettingsGroupName, QString() /* root settings group */, parent)
@@ -54,6 +57,8 @@ VideoSettings::VideoSettings(QObject* parent)
     , _rtspTimeoutFact(NULL)
     , _streamEnabledFact(NULL)
     , _disableWhenDisarmedFact(NULL)
+    , _videoResolutionFact(NULL)
+    , _cameraIdFact(NULL)
 {
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
     qmlRegisterUncreatableType<VideoSettings>("QGroundControl.SettingsManager", 1, 0, "VideoSettings", "Reference only");
@@ -67,6 +72,7 @@ VideoSettings::VideoSettings(QObject* parent)
 #endif
     videoSourceList.append(videoSourceRTSP);
     videoSourceList.append(videoSourceTCP);
+    videoSourceList.append(videoSourceAuto);
 #endif
 #ifndef QGC_DISABLE_UVC
     QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
@@ -90,7 +96,7 @@ VideoSettings::VideoSettings(QObject* parent)
     if (noVideo) {
         _nameToMetaDataMap[videoSourceName]->setRawDefaultValue(videoSourceNoVideo);
     } else {
-        _nameToMetaDataMap[videoSourceName]->setRawDefaultValue(videoDisabled);
+        _nameToMetaDataMap[videoSourceName]->setRawDefaultValue(videoSourceAuto);
     }
 }
 
@@ -202,6 +208,22 @@ Fact* VideoSettings::disableWhenDisarmed(void)
     return _disableWhenDisarmedFact;
 }
 
+Fact* VideoSettings::videoResolution(void)
+{
+    if (!_videoResolutionFact) {
+        _videoResolutionFact = _createSettingsFact(videoResolutionName);
+    }
+    return _videoResolutionFact;
+}
+
+Fact* VideoSettings::cameraId(void)
+{
+    if (!_cameraIdFact) {
+        _cameraIdFact = _createSettingsFact(cameraIdName);
+    }
+    return _cameraIdFact;
+}
+
 bool VideoSettings::streamConfigured(void)
 {
 #if !defined(QGC_GST_STREAMING)
@@ -222,6 +244,9 @@ bool VideoSettings::streamConfigured(void)
     //-- If TCP, check for URL
     if(vSource == videoSourceTCP) {
         return !tcpUrl()->rawValue().toString().isEmpty();
+    }
+    if(vSource == videoSourceAuto) {
+        return true;
     }
     return false;
 }

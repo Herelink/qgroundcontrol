@@ -63,6 +63,7 @@ VideoReceiver::VideoReceiver(QObject* parent)
     , _videoSink(NULL)
     , _socket(NULL)
     , _serverPresent(false)
+    , _startTime(0)
 #endif
     , _videoSurface(NULL)
     , _videoRunning(false)
@@ -285,7 +286,7 @@ VideoReceiver::start()
             QUrl url(_uri);
             g_object_set(G_OBJECT(dataSource), "host", qPrintable(url.host()), "port", url.port(), NULL );
         } else {
-            g_object_set(G_OBJECT(dataSource), "location", qPrintable(_uri), "latency", 17, "udp-reconnect", 1, "timeout", static_cast<guint64>(5000000), NULL);
+            g_object_set(G_OBJECT(dataSource), "location", qPrintable(_uri), "latency", 10, "udp-reconnect", 1, "timeout", static_cast<guint64>(0), "do-retransmission", false, NULL);
         }
 
         // Currently, we expect H264 when using anything except for TCP.  Long term we may want this to be settable
@@ -318,9 +319,13 @@ VideoReceiver::start()
             break;
         }
 
-        if ((decoder = gst_element_factory_make("avdec_h264", "h264-decoder")) == NULL) {
-            qCritical() << "VideoReceiver::start() failed. Error with gst_element_factory_make('avdec_h264')";
-            break;
+        if ((decoder = gst_element_factory_make("amcviddec-omxarmvideov5xxdecoder", "amcviddec-omxarmvideov5xxdecoder")) == NULL) {
+            qCritical() << "VideoReceiver::start() failed. Error with gst_element_factory_make('amcviddec-omxarmvideov5xxdecoder')";
+            //fallback to sw decoder
+            if ((decoder = gst_element_factory_make("avdec_h264", "h264-decoder")) == NULL) {
+                qCritical() << "VideoReceiver::start() failed. Error with gst_element_factory_make('avdec_h264')";
+                break;
+            }
         }
 
         if ((queue1 = gst_element_factory_make("queue", NULL)) == NULL) {
@@ -328,7 +333,7 @@ VideoReceiver::start()
             break;
         }
 
-        gst_bin_add_many(GST_BIN(_pipeline), dataSource, demux, parser, _tee, queue, decoder, queue1, _videoSink, NULL);
+        gst_bin_add_many(GST_BIN(_pipeline), dataSource, demux, _tee, queue, parser, decoder, queue1, _videoSink, NULL);
         pipelineUp = true;
 
         if(isUdp) {
@@ -349,7 +354,7 @@ VideoReceiver::start()
             g_signal_connect(demux, "pad-added", G_CALLBACK(newPadCB), parser);
         } else {
             g_signal_connect(dataSource, "pad-added", G_CALLBACK(newPadCB), demux);
-            if(!gst_element_link_many(demux, parser, _tee, queue, decoder, _videoSink, NULL)) {
+            if(!gst_element_link_many(demux, _tee, queue, parser, decoder, _videoSink, NULL)) {
                 qCritical() << "Unable to link RTSP elements.";
                 break;
             }
@@ -422,6 +427,7 @@ VideoReceiver::start()
     } else {
         GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(_pipeline), GST_DEBUG_GRAPH_SHOW_ALL, "pipeline-playing");
         _running = true;
+        _startTime = time(0);
         qCDebug(VideoReceiverLog) << "Running";
     }
     _starting = false;
@@ -823,22 +829,35 @@ VideoReceiver::_updateTimer()
                 emit videoRunningChanged();
             }
         }
+
+        uint32_t timeout = 1;
+        if(qgcApp()->toolbox() && qgcApp()->toolbox()->settingsManager()) {
+            timeout = _videoSettings->rtspTimeout()->rawValue().toUInt();
+        }
+
         if(_videoRunning) {
-            uint32_t timeout = 1;
-            if(qgcApp()->toolbox() && qgcApp()->toolbox()->settingsManager()) {
-                timeout = _videoSettings->rtspTimeout()->rawValue().toUInt();
-            }
+
             time_t elapsed = 0;
             time_t lastFrame = _videoSurface->lastFrame();
             if(lastFrame != 0) {
                 elapsed = time(0) - _videoSurface->lastFrame();
             }
+
             if(elapsed > (time_t)timeout && _videoSurface) {
+                qCritical() << "VideoReceiver::_updateTimer, elapsed time is " << elapsed;
+                qCritical() << "VideoReceiver::_updateTimer, current timeout is " << timeout;
                 stop();
             }
         } else {
-            if(!running() && !_uri.isEmpty() && _videoSettings->streamEnabled()->rawValue().toBool()) {
+            time_t elapsed = time(0) - _startTime;
+
+            //we start the stream over 30s, but still haven't received the data, so stop the stream, and waiting for the next connect
+            if(running() && elapsed > (time_t)timeout) {
+                qCritical() << "VideoReceiver::_updateTimer, stop stream ";
+                stop();
+            } else if(!running() && !_uri.isEmpty() && _videoSettings->streamEnabled()->rawValue().toBool()) {
                 start();
+                qCritical() << "VideoReceiver::_updateTimer, start stream ";
             }
         }
     }

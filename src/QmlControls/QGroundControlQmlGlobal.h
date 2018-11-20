@@ -99,6 +99,8 @@ public:
     Q_INVOKABLE void    startAPMArduSubMockLink     (bool sendStatusText);
     Q_INVOKABLE void    stopOneMockLink             (void);
 
+    Q_INVOKABLE void    openDialPad                 (void);
+
     /// Converts from meters to the user specified distance unit
     Q_INVOKABLE QVariant metersToAppSettingsDistanceUnits(const QVariant& meters) const { return FactMetaData::metersToAppSettingsDistanceUnits(meters); }
 

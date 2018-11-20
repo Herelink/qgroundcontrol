@@ -362,7 +362,7 @@ SetupPage {
 
                             QGCCheckBox {
                                 id:         enabledCheckBox
-                                enabled:    _activeJoystick ? _activeJoystick.calibrated : false
+                                enabled:    false
                                 text:       _activeJoystick ? _activeJoystick.calibrated ? qsTr("Enable joystick input") : qsTr("Enable not allowed (Calibrate First)") : ""
                                 checked:    _activeVehicle.joystickEnabled
 
@@ -540,6 +540,7 @@ SetupPage {
 
                     // Right column settings
                     Column {
+                        visible:    false
                         width:      parent.width / 2
                         spacing:    ScreenTools.defaultFontPixelHeight
 
@@ -816,6 +817,15 @@ SetupPage {
                         }
                     }
 
+                    QGCCheckBox {
+                        id:         volumeKeysSwitchMode
+                        enabled:    true
+                        text:       qsTr("Use volume keys to switch mode")
+                        checked:    _activeJoystick ? _activeJoystick.volumeKeysSwitchMode : false
+
+                        onClicked:  _activeJoystick.volumeKeysSwitchMode = checked
+                    }
+
                     Flow {
                         width:      parent.width
                         spacing:    -1
@@ -838,7 +848,7 @@ SetupPage {
                                     color:                  pressed ? qgcPal.buttonHighlightText : qgcPal.buttonText
                                     horizontalAlignment:    Text.AlignHCenter
                                     verticalAlignment:      Text.AlignVCenter
-                                    text:                   modelData
+                                    text:                   _activeJoystick.volumeKeysSwitchMode ? _activeJoystick.modeButtonState : modelData
                                 }
                             }
                         } // Repeater

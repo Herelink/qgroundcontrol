@@ -61,7 +61,7 @@ Item {
             id:             enableSwitch
             enabled:        _streamingEnabled
             checked:        QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue
-            onClicked: {
+            onCheckedChanged: {
                 if(checked) {
                     QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue = 1
                     _videoReceiver.start()
@@ -69,6 +69,40 @@ Item {
                     QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue = 0
                     _videoReceiver.stop()
                 }
+            }
+        }
+        // camera id
+        QGCLabel {
+           visible:        QGroundControl.videoManager.videoStreamControl.cameraCount > 1
+           text:            qsTr("Camera Switch")
+           font.pointSize:  ScreenTools.smallFontPointSize
+        }
+        QGCSwitch {
+            id:             cameraIdSwitch
+            visible:        QGroundControl.videoManager.videoStreamControl.cameraCount > 1
+            enabled:        !QGroundControl.videoManager.videoStreamControl.settingInProgress
+            checked:        QGroundControl.settingsManager.videoSettings.cameraId.rawValue === 1
+            onCheckedChanged: {
+                if(checked) {
+                    QGroundControl.settingsManager.videoSettings.cameraId.rawValue = 1
+                } else {
+                    QGroundControl.settingsManager.videoSettings.cameraId.rawValue = 0
+                }
+            }
+        }
+        // resolution
+        QGCLabel {
+           text:            qsTr("1080P video")
+           font.pointSize:  ScreenTools.smallFontPointSize
+        }
+        QGCSwitch {
+            id:             fhdSwitch
+            enabled:        !QGroundControl.videoManager.videoStreamControl.settingInProgress
+            checked:        (QGroundControl.settingsManager.videoSettings.videoResolution.rawValue === 2)
+                            || ((QGroundControl.settingsManager.videoSettings.videoResolution.rawValue === 0)
+                                &&(QGroundControl.videoManager.videoStreamControl.videoResolution === "1920x1080"))
+            onCheckedChanged: {
+                QGroundControl.videoManager.videoStreamControl.fhdEnabledChanged(checked)
             }
         }
         // Grid Lines
@@ -81,7 +115,7 @@ Item {
             enabled:        _streamingEnabled && _activeVehicle
             checked:        QGroundControl.settingsManager.videoSettings.gridLines.rawValue
             visible:        QGroundControl.videoManager.isGStreamer && QGroundControl.settingsManager.videoSettings.gridLines.visible
-            onClicked: {
+            onCheckedChanged: {
                 if(checked) {
                     QGroundControl.settingsManager.videoSettings.gridLines.rawValue = 1
                 } else {

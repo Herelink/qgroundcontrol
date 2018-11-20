@@ -46,6 +46,7 @@ import android.util.Log;
 import android.os.PowerManager;
 import android.view.WindowManager;
 import android.os.Bundle;
+import android.view.KeyEvent;
 
 import com.hoho.android.usbserial.driver.*;
 import org.qtproject.qt5.android.bindings.QtActivity;
@@ -113,29 +114,64 @@ public class QGCActivity extends QtActivity
         super.onCreate(savedInstanceState);
         PowerManager pm = (PowerManager)m_instance.getSystemService(Context.POWER_SERVICE);
         m_wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "QGroundControl");
-        if(m_wl != null) {
-            m_wl.acquire();
-            Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK acquired.");
-        } else {
-            Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK not acquired!!!");
-        }
-        m_instance.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        //m_instance.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override
     protected void onDestroy() {
-        try {
-            if(m_wl != null) {
-                m_wl.release();
-                Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK released.");
-            }
-        } catch(Exception e) {
-           Log.e(TAG, "Exception onDestroy()");
-        }
         super.onDestroy();
     }
 
     public void onInit(int status) {
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Log.i(TAG, "BACK key down, but do nothing");
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    public static void acquireScreenWakeLock() {
+        try{
+            if(m_wl != null && !m_wl.isHeld()) {
+                m_wl.acquire();
+                Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK acquired.");
+            }
+        } catch(Exception e) {
+            Log.e(TAG, "Exception on acquire SCREEN_BRIGHT_WAKE_LOCK"+e);
+        }
+    }
+
+    public static void releaseScreenWakeLock() {
+        try {
+            if(m_wl != null && m_wl.isHeld()) {
+                m_wl.release();
+                Log.i(TAG, "SCREEN_BRIGHT_WAKE_LOCK released.");
+            }
+        } catch(Exception e) {
+           Log.e(TAG, "Exception on release SCREEN_BRIGHT_WAKE_LOCK"+e);
+        }
+    }
+
+    public static void openDialPad() {
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        m_instance.startActivity(intent);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////

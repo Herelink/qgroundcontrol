@@ -851,6 +851,13 @@ QGCView {
                     anchors.horizontalCenter:   parent.horizontalCenter
                     text:                       qsTr("%1 Version: %2").arg(QGroundControl.appName).arg(QGroundControl.qgcVersion)
                 }
+                QGCButton {
+                    text:       qsTr("Dial Pad")
+                    enabled:    true
+                    onClicked: {
+                        QGroundControl.openDialPad()
+                    }
+                }
             } // settingsColumn
         } // QGCFlickable
     } // QGCViewPanel

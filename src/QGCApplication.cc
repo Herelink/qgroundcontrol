@@ -84,6 +84,7 @@
 #include "CameraCalc.h"
 #include "VisualMissionItem.h"
 #include "EditPositionDialogController.h"
+#include "AndroidController.h"
 
 #ifndef NO_SERIAL_LINK
 #include "SerialLink.h"
@@ -156,7 +157,7 @@ static QObject* qgroundcontrolQmlGlobalSingletonFactory(QQmlEngine*, QJSEngine*)
 
 QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
 #ifdef __mobile__
-    : QGuiApplication(argc, argv)
+    : QApplication(argc, argv)
     , _qmlAppEngine(NULL)
     #else
     : QApplication(argc, argv)
@@ -328,6 +329,7 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
 
     _toolbox = new QGCToolbox(this);
     _toolbox->setChildToolboxes();
+    _androidController = new AndroidController(this);
 }
 
 void QGCApplication::_shutdown(void)

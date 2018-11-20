@@ -224,6 +224,7 @@ QT += \
     sql \
     svg \
     widgets \
+    charts \
     xml \
     texttospeech
 
@@ -389,12 +390,18 @@ HEADERS += \
     src/api/QGCCorePlugin.h \
     src/api/QGCOptions.h \
     src/api/QGCSettings.h \
+    src/QmlControls/D2dInforDataSingle.h \
+    src/QmlControls/Freqcalibrationmodel.h \
+    src/api/QmlComponentInfo.h
     src/api/QmlComponentInfo.h \
 
 SOURCES += \
     src/api/QGCCorePlugin.cc \
     src/api/QGCOptions.cc \
     src/api/QGCSettings.cc \
+    src/QmlControls/D2dInforDataSingle.cpp \
+    src/QmlControls/Freqcalibrationmodel.cpp \
+    src/api/QmlComponentInfo.cc
     src/api/QmlComponentInfo.cc \
 
 #
@@ -592,7 +599,9 @@ HEADERS += \
 
 AndroidBuild {
 HEADERS += \
-	src/Joystick/JoystickAndroid.h \
+    src/Joystick/JoystickAndroid.h \
+    src/AndroidInterface.h \
+    src/AndroidController.h \
 }
 
 DebugBuild {
@@ -676,7 +685,9 @@ iOSBuild {
 
 AndroidBuild {
     SOURCES += src/MobileScreenMgr.cc \
-	src/Joystick/JoystickAndroid.cc \
+    src/Joystick/JoystickAndroid.cc \
+    src/AndroidInterface.cc \
+    src/AndroidController.cc \
 }
 
 SOURCES += \
@@ -1063,6 +1074,7 @@ HEADERS += \
     src/VideoStreaming/VideoItem.h \
     src/VideoStreaming/VideoReceiver.h \
     src/VideoStreaming/VideoStreaming.h \
+    src/VideoStreaming/VideoStreamControl.h \
     src/VideoStreaming/VideoSurface.h \
     src/VideoStreaming/VideoSurface_p.h \
 
@@ -1071,6 +1083,7 @@ SOURCES += \
     src/VideoStreaming/VideoReceiver.cc \
     src/VideoStreaming/VideoStreaming.cc \
     src/VideoStreaming/VideoSurface.cc \
+    src/VideoStreaming/VideoStreamControl.cc \
 
 contains (CONFIG, DISABLE_VIDEOSTREAMING) {
     message("Skipping support for video streaming (manual override from command line)")
@@ -1108,3 +1121,5 @@ contains (CONFIG, QGC_DISABLE_BUILD_SETUP) {
 #
 
 include(QGCInstaller.pri)
+
+DISTFILES +=

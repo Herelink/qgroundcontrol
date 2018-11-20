@@ -76,6 +76,8 @@ public:
     Q_PROPERTY(float exponential READ exponential WRITE setExponential NOTIFY exponentialChanged)
     Q_PROPERTY(bool accumulator READ accumulator WRITE setAccumulator NOTIFY accumulatorChanged)
 	Q_PROPERTY(bool requiresCalibration READ requiresCalibration CONSTANT)
+    Q_PROPERTY(int modeButtonState READ modeButtonState NOTIFY modeButtonStateChanged)
+    Q_PROPERTY(bool volumeKeysSwitchMode READ volumeKeysSwitchMode WRITE setVolumeKeysSwitchMode NOTIFY volumeKeysSwitchModeChanged)
     
     // Property accessors
 
@@ -134,6 +136,11 @@ public:
     /// Clear the current calibration mode
     void stopCalibrationMode(CalibrationMode_t mode);
 
+    int modeButtonState() { return _modeButtonState; }
+
+    bool volumeKeysSwitchMode();
+    void setVolumeKeysSwitchMode(bool enable);
+
 signals:
     void calibratedChanged(bool calibrated);
 
@@ -162,6 +169,8 @@ signals:
     void manualControl(float roll, float pitch, float yaw, float throttle, quint16 buttons, int joystickMmode);
 
     void buttonActionTriggered(int action);
+    void modeButtonStateChanged();
+    void volumeKeysSwitchModeChanged(bool enable);
 
 protected:
     void    _setDefaultCalibration(void);
@@ -199,6 +208,9 @@ protected:
     int     _hatCount;
     int     _hatButtonCount;
     int     _totalButtonCount;
+    int     _modeButtonState;
+    int     _modeButtonStateMax;
+    bool    _volumeKeysSwitchMode;
 
     static int          _transmitterMode;
     CalibrationMode_t   _calibrationMode;
@@ -240,6 +252,7 @@ private:
     static const char* _roverTXModeSettingsKey;
     static const char* _vtolTXModeSettingsKey;
     static const char* _submarineTXModeSettingsKey;
+    static const char* _volumeKeysSwitchModeKey;
 
 private slots:
     void _activeVehicleChanged(Vehicle* activeVehicle);

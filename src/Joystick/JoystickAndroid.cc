@@ -53,6 +53,9 @@ JoystickAndroid::JoystickAndroid(const QString& name, int axisCount, int buttonC
     qCDebug(JoystickLog) << "axis:" <<_axisCount << "buttons:" <<_buttonCount;
     QtAndroidPrivate::registerGenericMotionEventListener(this);
     QtAndroidPrivate::registerKeyEventListener(this);
+
+    _modeButtonStateMax = 5;
+    _modeButtonState = _modeButtonStateMax / 2;
 }
 
 JoystickAndroid::~JoystickAndroid() {
@@ -131,7 +134,30 @@ bool JoystickAndroid::handleKeyEvent(jobject event) {
     QJNIObjectPrivate ev(event);
     QMutexLocker lock(&m_mutex);
     const int _deviceId = ev.callMethod<jint>("getDeviceId", "()I");
-    if (_deviceId!=deviceId) return false;
+    if (_deviceId!=deviceId) {
+        const int ac = ev.callMethod<jint>("getAction", "()I");
+        const int kc = ev.callMethod<jint>("getKeyCode", "()I");
+        const int KEYCODE_VOLUME_UP = QAndroidJniObject::getStaticField<jint>("android/view/KeyEvent", "KEYCODE_VOLUME_UP");
+        const int KEYCODE_VOLUME_DOWN = QAndroidJniObject::getStaticField<jint>("android/view/KeyEvent", "KEYCODE_VOLUME_DOWN");
+        if (volumeKeysSwitchMode() && (kc == KEYCODE_VOLUME_UP || kc == KEYCODE_VOLUME_DOWN)) {
+            if (ac==ACTION_DOWN) {
+                if (kc == KEYCODE_VOLUME_UP) {
+                    _modeButtonState++;
+                    if(_modeButtonState > _modeButtonStateMax) {
+                        _modeButtonState = _modeButtonStateMax;
+                    }
+                } else if (kc == KEYCODE_VOLUME_DOWN) {
+                    _modeButtonState--;
+                    if(_modeButtonState < 0) {
+                        _modeButtonState = 0;
+                    }
+                }
+            }
+            emit modeButtonStateChanged();
+            return true;
+        }
+        return false;
+    }
  
     const int action = ev.callMethod<jint>("getAction", "()I");
     const int keyCode = ev.callMethod<jint>("getKeyCode", "()I");

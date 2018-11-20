@@ -58,7 +58,7 @@ Item {
     property bool isMobile:         ScreenToolsController.isMobile
     property bool isWindows:        ScreenToolsController.isWindows
     property bool isDebug:          ScreenToolsController.isDebug
-    property bool isTinyScreen:     (Screen.width / Screen.pixelDensity) < 120 // 120mm
+    property bool isTinyScreen:     (Screen.width / Screen.pixelDensity) < 125 // 125mm
     property bool isShortScreen:    ScreenToolsController.isMobile && ((Screen.height / Screen.width) < 0.6) // Nexus 7 for example
     property bool isHugeScreen:     Screen.width >= 1920*2
 
@@ -115,7 +115,7 @@ Item {
         mediumFontPointSize     = defaultFontPointSize  * _screenTools.mediumFontPointRatio
         largeFontPointSize      = defaultFontPointSize  * _screenTools.largeFontPointRatio
         minTouchPixels          = Math.round(minTouchMillimeters * Screen.pixelDensity)
-        if (minTouchPixels / Screen.height > 0.15) {
+        if (minTouchPixels / Screen.height > 0.08) {
             // If using physical sizing takes up too much o fthe vertical real estate fall back to font based sizing
             minTouchPixels      = defaultFontPixelHeight * 3
         }
@@ -151,7 +151,7 @@ Item {
                         } else {
                             baseSize = 14;
                         }
-                    } else if((Screen.width / Screen.pixelDensity) < 120) {
+                    } else if((Screen.width / Screen.pixelDensity) < 125) {
                         baseSize = 11;
                     // Other Android
                     } else {

@@ -16,6 +16,10 @@
 #include "AppMessages.h"
 #include "QmlObjectListModel.h"
 
+
+//#include "FreqCalibration.h"
+#include "D2dInforDataSingle.h"
+
 #include <QtQml>
 #include <QQmlEngine>
 
@@ -27,11 +31,12 @@ class QGCCorePlugin_p
 {
 public:
     QGCCorePlugin_p()
-        : pGeneral                  (NULL)
-        , pCommLinks                (NULL)
-        , pOfflineMaps              (NULL)
-        , pMAVLink                  (NULL)
-        , pConsole                  (NULL)
+        : pGeneral(NULL)
+        , pCommLinks(NULL)
+        , pOfflineMaps(NULL)
+        , pMAVLink(NULL)
+        , pConsole(NULL)
+        , pCalibration(NULL)
     #if defined(QT_DEBUG)
         , pMockLink                 (NULL)
         , pDebug                    (NULL)
@@ -57,6 +62,12 @@ public:
             delete pMAVLink;
         if(pConsole)
             delete pConsole;
+        if(pCalibration)
+            delete pCalibration;
+        if(pD2dInfo)
+            delete pD2dInfo;
+        if(pBtnSetting)
+            delete pBtnSetting;
 #if defined(QT_DEBUG)
         if(pMockLink)
             delete pMockLink;
@@ -66,12 +77,14 @@ public:
         if(defaultOptions)
             delete defaultOptions;
     }
-
     QmlComponentInfo* pGeneral;
     QmlComponentInfo* pCommLinks;
     QmlComponentInfo* pOfflineMaps;
     QmlComponentInfo* pMAVLink;
     QmlComponentInfo* pConsole;
+    QmlComponentInfo* pCalibration;
+    QmlComponentInfo* pD2dInfo;
+    QmlComponentInfo* pBtnSetting;
 #if defined(QT_DEBUG)
     QmlComponentInfo* pMockLink;
     QmlComponentInfo* pDebug;
@@ -115,31 +128,45 @@ void QGCCorePlugin::setToolbox(QGCToolbox *toolbox)
 QVariantList &QGCCorePlugin::settingsPages()
 {
     if(!_p->pGeneral) {
-        _p->pGeneral = new QmlComponentInfo(tr("General"),
+        _p->pGeneral = new QmlComponentInfo(tr("General "),
                                        QUrl::fromUserInput("qrc:/qml/GeneralSettings.qml"),
                                        QUrl::fromUserInput("qrc:/res/gear-white.svg"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pGeneral));
-        _p->pCommLinks = new QmlComponentInfo(tr("Comm Links"),
+        _p->pCommLinks = new QmlComponentInfo(tr("Comm Links "),
                                          QUrl::fromUserInput("qrc:/qml/LinkSettings.qml"),
                                          QUrl::fromUserInput("qrc:/res/waves.svg"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pCommLinks));
-        _p->pOfflineMaps = new QmlComponentInfo(tr("Offline Maps"),
+        _p->pOfflineMaps = new QmlComponentInfo(tr("Offline Maps "),
                                            QUrl::fromUserInput("qrc:/qml/OfflineMap.qml"),
                                            QUrl::fromUserInput("qrc:/res/waves.svg"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pOfflineMaps));
-        _p->pMAVLink = new QmlComponentInfo(tr("MAVLink"),
+        _p->pMAVLink = new QmlComponentInfo(tr("MAVLink "),
                                        QUrl::fromUserInput("qrc:/qml/MavlinkSettings.qml"),
                                        QUrl::fromUserInput("qrc:/res/waves.svg"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pMAVLink));
-        _p->pConsole = new QmlComponentInfo(tr("Console"),
+        _p->pConsole = new QmlComponentInfo(tr("Console "),
                                        QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/AppMessages.qml"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pConsole));
+
+        _p->pCalibration = new QmlComponentInfo(tr("Calibration "),
+                                       QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/FreqCalibration.qml"));
+        _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pCalibration));
+
+        _p->pD2dInfo = new QmlComponentInfo(tr("D2d Info "),
+                                       QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/D2dInfo.qml"));
+        _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pD2dInfo));
+
+        _p->pBtnSetting = new QmlComponentInfo(tr("Set Buttons "),
+                                       QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/BtnSetting.qml"));
+        //_p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pBtnSetting));
+
+
 #if defined(QT_DEBUG)
         //-- These are always present on Debug builds
-        _p->pMockLink = new QmlComponentInfo(tr("Mock Link"),
+        _p->pMockLink = new QmlComponentInfo(tr("Mock Link "),
                                         QUrl::fromUserInput("qrc:/qml/MockLink.qml"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pMockLink));
-        _p->pDebug = new QmlComponentInfo(tr("Debug"),
+        _p->pDebug = new QmlComponentInfo(tr("Debug "),
                                      QUrl::fromUserInput("qrc:/qml/DebugWindow.qml"));
         _p->settingsList.append(QVariant::fromValue((QmlComponentInfo*)_p->pDebug));
 #endif
@@ -255,7 +282,7 @@ QString QGCCorePlugin::showAdvancedUIMessage(void) const
 void QGCCorePlugin::valuesWidgetDefaultSettings(QStringList& largeValues, QStringList& smallValues)
 {
     Q_UNUSED(smallValues);
-    largeValues << "Vehicle.altitudeRelative" << "Vehicle.groundSpeed" << "Vehicle.flightTime";
+    largeValues << "Vehicle.altitudeRelative" << "Vehicle.groundSpeed" << "Vehicle.flightTime" << "Vehicle.temperature.boardTemperature";
 }
 
 QQmlApplicationEngine* QGCCorePlugin::createRootWindow(QObject *parent)
@@ -264,6 +291,10 @@ QQmlApplicationEngine* QGCCorePlugin::createRootWindow(QObject *parent)
     pEngine->addImportPath("qrc:/qml");
     pEngine->rootContext()->setContextProperty("joystickManager", qgcApp()->toolbox()->joystickManager());
     pEngine->rootContext()->setContextProperty("debugMessageModel", AppMessages::getModel());
+    //zhangcan start
+    pEngine->rootContext()->setContextProperty("pD2dInforData", D2dInforDataSingle::getD2dInforData());
+    //end
+
     pEngine->load(QUrl(QStringLiteral("qrc:/qml/MainWindowNative.qml")));
     return pEngine;
 }

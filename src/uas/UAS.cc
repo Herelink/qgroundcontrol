@@ -1161,6 +1161,31 @@ void UAS::setExternalControlSetpoint(float roll, float pitch, float yaw, float t
         }
 
         _vehicle->sendMessageOnLink(_vehicle->priorityLink(), message);
+
+        if (joystickMode == Vehicle::JoystickModeRC) {
+            // Store scaling values for all 3 axes
+            const float axesScaling = 1.0 * 1000.0;
+
+            const float ch1 = (roll+1) * axesScaling;
+            const float ch2 = (-pitch+1) * axesScaling;
+            const float ch3 = (yaw+1) * axesScaling;
+            const float ch4 = thrust * axesScaling;
+            int max = buttons / 256;
+            int unit = (max == 0) ? 0 : (2000 / max);
+            uint8_t state = (uint8_t)buttons;
+            const float ch5 = unit * state;
+
+            mavlink_msg_rc_channels_pack_chan(mavlink->getSystemId(),mavlink->getComponentId(),
+                                              _vehicle->priorityLink()->mavlinkChannel(),
+                                              &message,
+                                              0, 5,
+                                              ch1, ch2, ch3, ch4,
+                                              ch5, 0, 0, 0,
+                                              0, 0, 0, 0,
+                                              0, 0, 0, 0,
+                                              0, 0, 255);
+            _vehicle->sendMessageOnLink(_vehicle->priorityLink(), message);
+        }
     }
 }
 

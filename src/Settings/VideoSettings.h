@@ -32,6 +32,8 @@ public:
     Q_PROPERTY(Fact* rtspTimeout            READ rtspTimeout            CONSTANT)
     Q_PROPERTY(Fact* streamEnabled          READ streamEnabled          CONSTANT)
     Q_PROPERTY(Fact* disableWhenDisarmed    READ disableWhenDisarmed    CONSTANT)
+    Q_PROPERTY(Fact* videoResolution        READ videoResolution        CONSTANT)
+    Q_PROPERTY(Fact* cameraId               READ cameraId               CONSTANT)
     Q_PROPERTY(bool  streamConfigured       READ streamConfigured       NOTIFY streamConfiguredChanged)
 
     Fact* videoSource           (void);
@@ -47,6 +49,8 @@ public:
     Fact* rtspTimeout           (void);
     Fact* streamEnabled         (void);
     Fact* disableWhenDisarmed   (void);
+    Fact* videoResolution       (void);
+    Fact* cameraId              (void);
     bool  streamConfigured      (void);
 
     static const char* videoSettingsGroupName;
@@ -64,12 +68,15 @@ public:
     static const char* rtspTimeoutName;
     static const char* streamEnabledName;
     static const char* disableWhenDisarmedName;
+    static const char* videoResolutionName;
+    static const char* cameraIdName;
 
     static const char* videoSourceNoVideo;
     static const char* videoDisabled;
     static const char* videoSourceUDP;
     static const char* videoSourceRTSP;
     static const char* videoSourceTCP;
+    static const char* videoSourceAuto;
 
 signals:
     void streamConfiguredChanged    ();
@@ -91,6 +98,8 @@ private:
     SettingsFact* _rtspTimeoutFact;
     SettingsFact* _streamEnabledFact;
     SettingsFact* _disableWhenDisarmedFact;
+    SettingsFact* _videoResolutionFact;
+    SettingsFact* _cameraIdFact;
 };
 
 #endif
